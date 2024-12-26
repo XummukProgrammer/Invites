@@ -139,14 +139,6 @@ public class API : IAPI
     }
 }
 
-public class TestRewardDelegate : IRewardDelegate
-{
-    public void OnGive(CCSPlayerController controller)
-    {
-        controller.PrintToChat("Hello, World!");
-    }
-}
-
 public class InvitesCore : BasePlugin
 {
     public override string ModuleName => Constants.PluginName;
@@ -169,7 +161,6 @@ public class InvitesCore : BasePlugin
         base.OnAllPluginsLoaded(hotReload);
 
         API = _apiCapability.Get();
-        API?.AddReward("test", new TestRewardDelegate());
     }
 
     [ConsoleCommand("css_invite_generate", "")]
