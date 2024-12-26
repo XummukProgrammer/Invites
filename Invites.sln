@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvitesCore", "InvitesCore\InvitesCore.csproj", "{79901C8F-43CC-436E-A6B9-9571E9C166EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvitesAPI", "InvitesAPI\InvitesAPI.csproj", "{22D4D756-C0CF-4C21-96A8-66E5349C4867}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79901C8F-43CC-436E-A6B9-9571E9C166EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79901C8F-43CC-436E-A6B9-9571E9C166EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79901C8F-43CC-436E-A6B9-9571E9C166EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79901C8F-43CC-436E-A6B9-9571E9C166EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22D4D756-C0CF-4C21-96A8-66E5349C4867}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22D4D756-C0CF-4C21-96A8-66E5349C4867}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22D4D756-C0CF-4C21-96A8-66E5349C4867}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22D4D756-C0CF-4C21-96A8-66E5349C4867}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
