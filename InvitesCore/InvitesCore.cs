@@ -2,7 +2,9 @@
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Core.Capabilities;
 using CounterStrikeSharp.API.Modules.Commands;
+using Dapper;
 using Invites.API;
+using Microsoft.Data.Sqlite;
 using System.Text.Json.Serialization;
 
 namespace InvitesCore;
@@ -150,14 +152,21 @@ public class InvitesManager
         }
     }
 
-    public void Add(string id, string rewardId)
+    public void Add(string id, string packId, bool db = true)
     {
-        _invites.Add(id, rewardId);
+        _invites.Add(id, packId);
+
+        if (db)
+        {
+            Managers.Database.AddInvite(id, packId);
+        }
     }
 
     public void Remove(string id)
     {
         _invites.Remove(id);
+
+        Managers.Database.RemoveInvite(id);
     }
 
     public string? GetPackId(string id)
@@ -212,12 +221,52 @@ public class InvitesManager
     }
 }
 
+public class DatabaseManager
+{
+    private SqliteConnection _connection = null!;
+
+    public void Load(string moduleDirectory)
+    {
+        _connection = new SqliteConnection($"Data Source={Path.Join(moduleDirectory, "database.db")}");
+        _connection.Open();
+
+        _connection.Execute(@"
+                CREATE TABLE IF NOT EXISTS `Invites` (
+                    `Id` INTEGER PRIMARY KEY AUTOINCREMENT,
+	                `Key` VARCHAR(64),
+	                `Pack` VARCHAR(64));");
+    }
+
+    public void AddInvite(string id, string packId)
+    {
+        _connection.Execute(
+                @"INSERT INTO `Invites` (`Key`, `Pack`) VALUES ('@Key', '@Pack');",
+                new { Key = id, Pack = packId }
+            );
+    }
+
+    public void RemoveInvite(string id)
+    {
+        _connection.Execute(@"DELETE FROM `Invites` WHERE `Key` = '@Key';", new { Key = id });
+    }
+
+    public void LoadInvites()
+    {
+        var invites = _connection.Query<InviteDBModel>(@"SELECT * FROM `Invites`;");
+        foreach (var invite in invites)
+        {
+            Managers.Invites.Add(invite.Key, invite.Pack, false);
+        }
+    }
+}
+
 public static class Managers
 {
     public static APIDelegatesManager Delegates { get; private set; } = new();
     public static RewardsManager Rewards { get; private set; } = new();
     public static PacksManager Packs { get; private set; } = new();
     public static InvitesManager Invites { get; private set; } = new();
+    public static DatabaseManager Database {  get; private set; } = new();
 }
 
 public class API : IAPI
@@ -281,6 +330,13 @@ public class ConfigModel : BasePluginConfig
         ];
 }
 
+public class InviteDBModel
+{
+    public ulong Id { get; set; }
+    public string Key { get; set; }
+    public string Pack { get; set; }
+}
+
 public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
 {
     public override string ModuleName => Constants.PluginName;
@@ -298,6 +354,8 @@ public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
 
         Capabilities.RegisterPluginCapability(_apiCapability, () => new API());
         API = _apiCapability.Get();
+
+        Managers.Database.Load(ModuleDirectory);
     }
 
     public void OnConfigParsed(ConfigModel config)
@@ -307,8 +365,16 @@ public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
         Managers.Packs.SetConfig(config);
     }
 
+    public override void OnAllPluginsLoaded(bool hotReload)
+    {
+        base.OnAllPluginsLoaded(hotReload);
+
+        Managers.Database.LoadInvites();
+    }
+
     [ConsoleCommand("css_invite_generate", "")]
     [CommandHelper(minArgs: 1, usage: "[packid]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    //[RequiresPermissions("@css/root")]
     public void OnInviteGenerateCommandHandler(CCSPlayerController? controller, CommandInfo command)
     {
         var packId = command.ArgByIndex(1);
