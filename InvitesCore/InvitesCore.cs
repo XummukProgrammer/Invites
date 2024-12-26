@@ -13,6 +13,53 @@ public class Constants
     public const string PluginAuthor = "Xummuk97";
 }
 
+public class APIDelegatesManager
+{
+    private List<APIDelegate> _delegates = new();
+
+    public void Add(APIDelegate @delegate)
+    {
+        _delegates.Add(@delegate);
+    }
+
+    public void Remove(APIDelegate @delegate)
+    {
+        _delegates.Remove(@delegate);
+    }
+
+    public void OnRewardAdded(string rewardId)
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnRewardAdded(rewardId);
+        }
+    }
+
+    public void OnRewardGived(string rewardId, CCSPlayerController controller)
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnRewardGived(rewardId, controller);
+        }
+    }
+
+    public void OnInviteGenerated(string inviteId, string rewardId)
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnInviteGenerated(inviteId, rewardId);
+        }
+    }
+
+    public void OnInviteApplied(string inviteId, CCSPlayerController controller)
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnInviteApplied(inviteId, controller);
+        }
+    }
+}
+
 public class RewardsManager
 {
     private Dictionary<string, IRewardDelegate> _delegates = new();
@@ -20,6 +67,8 @@ public class RewardsManager
     public void AddDelegate(string id, IRewardDelegate @delegate)
     {
         _delegates.Add(id, @delegate);
+
+        Managers.Delegates.OnRewardAdded(id);
     }
 
     public IRewardDelegate? GetDelegate(string id)
@@ -29,6 +78,19 @@ public class RewardsManager
             return @delegate;
         }
         return null;
+    }
+
+    public void OnGive(string id, CCSPlayerController? controller)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        var @delegate = GetDelegate(id);
+        @delegate?.OnGive(controller);
+
+        Managers.Delegates.OnRewardGived(id, controller);
     }
 }
 
@@ -80,6 +142,8 @@ public class InvitesManager
         if (id != null)
         {
             Add(id, rewardId);
+
+            Managers.Delegates.OnInviteGenerated(id, rewardId);
         }
         return id;
     }
@@ -94,10 +158,10 @@ public class InvitesManager
         var rewardId = GetRewardId(id);
         if (rewardId != null)
         {
-            var @delegate = Managers.Rewards.GetDelegate(rewardId);
-            @delegate?.OnGive(controller);
-
+            Managers.Rewards.OnGive(rewardId, controller);
             Remove(id);
+
+            Managers.Delegates.OnInviteApplied(rewardId, controller);
         }
     }
 
@@ -117,12 +181,23 @@ public class InvitesManager
 
 public static class Managers
 {
+    public static APIDelegatesManager Delegates { get; private set; } = new();
     public static RewardsManager Rewards { get; private set; } = new();
     public static InvitesManager Invites { get; private set; } = new();
 }
 
 public class API : IAPI
 {
+    public void AddAPIDelegate(APIDelegate @delegate)
+    {
+        Managers.Delegates.Add(@delegate);
+    }
+
+    public void RemoveAPIDelegate(APIDelegate @delegate)
+    {
+        Managers.Delegates.Remove(@delegate);
+    }
+
     public void AddReward(string id, IRewardDelegate @delegate)
     {
         Managers.Rewards.AddDelegate(id, @delegate);
@@ -154,12 +229,6 @@ public class InvitesCore : BasePlugin
         base.Load(hotReload);
 
         Capabilities.RegisterPluginCapability(_apiCapability, () => new API());
-    }
-
-    public override void OnAllPluginsLoaded(bool hotReload)
-    {
-        base.OnAllPluginsLoaded(hotReload);
-
         API = _apiCapability.Get();
     }
 

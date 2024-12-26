@@ -4,10 +4,13 @@ namespace Invites.API
 {
     public interface IAPI
     {
-        void AddReward(string id, IRewardDelegate @delegate);
+        public void AddAPIDelegate(APIDelegate @delegate);
+        public void RemoveAPIDelegate(APIDelegate @delegate);
 
-        string? GenerateInvite(string rewardId);
+        public void AddReward(string id, IRewardDelegate @delegate);
 
-        void ApplyInvite(CCSPlayerController? controller, string inviteId);
+        public string? GenerateInvite(string rewardId);
+
+        public void ApplyInvite(CCSPlayerController? controller, string inviteId);
     }
 }

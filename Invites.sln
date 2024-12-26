@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvitesAPI", "InvitesAPI\In
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KickInvite", "Modules\KickInvite\KickInvite.csproj", "{97198F11-7997-44F9-88CB-3726B87EF963}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Logger", "Modules\Logger\Logger.csproj", "{CE21024C-5191-4287-8B20-844FD9A63ED9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{97198F11-7997-44F9-88CB-3726B87EF963}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97198F11-7997-44F9-88CB-3726B87EF963}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97198F11-7997-44F9-88CB-3726B87EF963}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE21024C-5191-4287-8B20-844FD9A63ED9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE21024C-5191-4287-8B20-844FD9A63ED9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE21024C-5191-4287-8B20-844FD9A63ED9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE21024C-5191-4287-8B20-844FD9A63ED9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
