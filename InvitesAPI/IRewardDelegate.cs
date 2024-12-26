@@ -4,6 +4,6 @@ namespace Invites.API
 {
     public interface IRewardDelegate
     {
-        void OnGive(CCSPlayerController controller);
+        void OnGive(CCSPlayerController controller, string? @params);
     }
 }

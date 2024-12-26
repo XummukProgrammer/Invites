@@ -28,9 +28,9 @@ public class LoggerAPIDelegate : APIDelegate
         BasePlugin?.Logger.LogInformation($"OnRewardGived(rewardId:{rewardId} playerName:{controller.PlayerName})");
     }
 
-    public override void OnInviteGenerated(string inviteId, string rewardId)
+    public override void OnInviteGenerated(string inviteId, string packId)
     {
-        BasePlugin?.Logger.LogInformation($"OnInviteGenerated(inviteId:{inviteId} rewardId:{rewardId})");
+        BasePlugin?.Logger.LogInformation($"OnInviteGenerated(inviteId:{inviteId} packId:{packId})");
     }
 
     public override void OnInviteApplied(string inviteId, CCSPlayerController controller)

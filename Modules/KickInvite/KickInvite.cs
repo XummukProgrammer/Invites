@@ -16,7 +16,7 @@ public class Constants
 
 public class KickRewardDelegate : IRewardDelegate
 {
-    public void OnGive(CCSPlayerController controller)
+    public void OnGive(CCSPlayerController controller, string? @params)
     {
         controller.Kick("You have received an invite kick! :)");
     }
@@ -38,5 +38,6 @@ public class KickInvite : BasePlugin
 
         API = _apiCapability.Get();
         API?.AddReward(Constants.RewardId, new KickRewardDelegate());
+        API?.AddReward("Command", new KickRewardDelegate());
     }
 }

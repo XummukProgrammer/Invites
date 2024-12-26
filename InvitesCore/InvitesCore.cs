@@ -3,6 +3,7 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Core.Capabilities;
 using CounterStrikeSharp.API.Modules.Commands;
 using Invites.API;
+using System.Text.Json.Serialization;
 
 namespace InvitesCore;
 
@@ -43,11 +44,11 @@ public class APIDelegatesManager
         }
     }
 
-    public void OnInviteGenerated(string inviteId, string rewardId)
+    public void OnInviteGenerated(string inviteId, string packId)
     {
         foreach (var @delegate in _delegates)
         {
-            @delegate.OnInviteGenerated(inviteId, rewardId);
+            @delegate.OnInviteGenerated(inviteId, packId);
         }
     }
 
@@ -80,7 +81,7 @@ public class RewardsManager
         return null;
     }
 
-    public void OnGive(string id, CCSPlayerController? controller)
+    public void OnGive(string id, string? @params, CCSPlayerController? controller)
     {
         if (controller == null)
         {
@@ -88,9 +89,41 @@ public class RewardsManager
         }
 
         var @delegate = GetDelegate(id);
-        @delegate?.OnGive(controller);
+        @delegate?.OnGive(controller, @params);
 
         Managers.Delegates.OnRewardGived(id, controller);
+    }
+}
+
+public class PacksManager
+{
+    private ConfigModel? _config;
+
+    public void SetConfig(ConfigModel? config)
+    {
+        _config = config;
+    }
+
+    public void Give(string id, CCSPlayerController? controller)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        var pack = _config?.Packs?.Find(pack => pack.ID == id);
+        if (pack != null)
+        {
+            var rewards = pack.Rewards;
+
+            if (rewards != null)
+            {
+                foreach (var reward in rewards)
+                {
+                    Managers.Rewards.OnGive(reward.ID ?? "", reward.Params, controller);
+                }
+            }
+        }
     }
 }
 
@@ -127,7 +160,7 @@ public class InvitesManager
         _invites.Remove(id);
     }
 
-    public string? GetRewardId(string id)
+    public string? GetPackId(string id)
     {
         if (_invites.TryGetValue(id, out var rewardId))
         {
@@ -136,14 +169,14 @@ public class InvitesManager
         return null;
     }
 
-    public string? Generate(string rewardId, int count = 20)
+    public string? Generate(string packId, int count = 20)
     {
         var id = GenerateId(count);
         if (id != null)
         {
-            Add(id, rewardId);
+            Add(id, packId);
 
-            Managers.Delegates.OnInviteGenerated(id, rewardId);
+            Managers.Delegates.OnInviteGenerated(id, packId);
         }
         return id;
     }
@@ -155,13 +188,13 @@ public class InvitesManager
             return;
         }
 
-        var rewardId = GetRewardId(id);
-        if (rewardId != null)
+        var packId = GetPackId(id);
+        if (packId != null)
         {
-            Managers.Rewards.OnGive(rewardId, controller);
+            Managers.Packs.Give(packId, controller);
             Remove(id);
 
-            Managers.Delegates.OnInviteApplied(rewardId, controller);
+            Managers.Delegates.OnInviteApplied(id, controller);
         }
     }
 
@@ -183,6 +216,7 @@ public static class Managers
 {
     public static APIDelegatesManager Delegates { get; private set; } = new();
     public static RewardsManager Rewards { get; private set; } = new();
+    public static PacksManager Packs { get; private set; } = new();
     public static InvitesManager Invites { get; private set; } = new();
 }
 
@@ -208,13 +242,46 @@ public class API : IAPI
         Managers.Invites.Apply(controller, inviteId);
     }
 
-    public string? GenerateInvite(string rewardId)
+    public string? GenerateInvite(string packId)
     {
-        return Managers.Invites.Generate(rewardId);
+        return Managers.Invites.Generate(packId);
     }
 }
 
-public class InvitesCore : BasePlugin
+public class RewardModel
+{
+    [JsonPropertyName("ID")] public string? ID { get; set; }
+    [JsonPropertyName("Params")] public string? Params { get; set; }
+}
+
+public class PackModel
+{
+    [JsonPropertyName("ID")] public string? ID { get; set; }
+    [JsonPropertyName("Rewards")] public List<RewardModel>? Rewards { get; set; }
+}
+
+public class ConfigModel : BasePluginConfig
+{
+    [JsonPropertyName("Packs")] public List<PackModel>? Packs { get; set; } = 
+        [
+            new PackModel 
+            { 
+                ID = "TestPack", Rewards = 
+                    [
+                        new RewardModel
+                        {
+                            ID = "Command", Params = "params"
+                        },
+                        new RewardModel
+                        {
+                            ID = "Kick"
+                        }
+                    ] 
+            }
+        ];
+}
+
+public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
 {
     public override string ModuleName => Constants.PluginName;
     public override string ModuleVersion => Constants.PluginVersion;
@@ -223,6 +290,7 @@ public class InvitesCore : BasePlugin
     private PluginCapability<IAPI> _apiCapability = new(Invites.API.Constants.APICapability);
 
     public static IAPI? API { get; private set; }
+    public ConfigModel Config { get; set; }
 
     public override void Load(bool hotReload)
     {
@@ -232,13 +300,20 @@ public class InvitesCore : BasePlugin
         API = _apiCapability.Get();
     }
 
+    public void OnConfigParsed(ConfigModel config)
+    {
+        Config = config;
+
+        Managers.Packs.SetConfig(config);
+    }
+
     [ConsoleCommand("css_invite_generate", "")]
-    [CommandHelper(minArgs: 1, usage: "[rewardid]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
+    [CommandHelper(minArgs: 1, usage: "[packid]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
     public void OnInviteGenerateCommandHandler(CCSPlayerController? controller, CommandInfo command)
     {
-        var rewardId = command.ArgByIndex(1);
+        var packId = command.ArgByIndex(1);
 
-        var inviteId = API?.GenerateInvite(rewardId);
+        var inviteId = API?.GenerateInvite(packId);
 
         command.ReplyToCommand($"A new invite has been generated: {inviteId}.");
     }

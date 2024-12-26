@@ -9,7 +9,7 @@ namespace Invites.API
 
         public void AddReward(string id, IRewardDelegate @delegate);
 
-        public string? GenerateInvite(string rewardId);
+        public string? GenerateInvite(string packId);
 
         public void ApplyInvite(CCSPlayerController? controller, string inviteId);
     }

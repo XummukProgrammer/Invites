@@ -19,7 +19,7 @@ namespace Invites.API
         {
         }
 
-        public virtual void OnInviteGenerated(string inviteId, string rewardId)
+        public virtual void OnInviteGenerated(string inviteId, string packId)
         {
         }
 
