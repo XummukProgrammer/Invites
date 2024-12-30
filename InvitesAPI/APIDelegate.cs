@@ -11,6 +11,14 @@ namespace Invites.API
             BasePlugin = basePlugin;
         }
 
+        public virtual void OnCoreLoaded()
+        {
+        }
+
+        public virtual void OnCorePostLoaded()
+        {
+        }
+
         public virtual void OnRewardAdded(string rewardId)
         {
         }

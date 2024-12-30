@@ -30,6 +30,22 @@ public class APIDelegatesManager
         _delegates.Remove(@delegate);
     }
 
+    public void OnCoreLoaded()
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnCoreLoaded();
+        }
+    }
+
+    public void OnCorePostLoaded()
+    {
+        foreach (var @delegate in _delegates)
+        {
+            @delegate.OnCorePostLoaded();
+        }
+    }
+
     public void OnRewardAdded(string rewardId)
     {
         foreach (var @delegate in _delegates)
@@ -230,33 +246,41 @@ public class DatabaseManager
         _connection = new SqliteConnection($"Data Source={Path.Join(moduleDirectory, "database.db")}");
         _connection.Open();
 
-        _connection.Execute(@"
+        Task.Run(async () =>
+        {
+            await _connection.ExecuteAsync(@"
                 CREATE TABLE IF NOT EXISTS `Invites` (
                     `Id` INTEGER PRIMARY KEY AUTOINCREMENT,
 	                `Key` VARCHAR(64),
 	                `Pack` VARCHAR(64));");
+
+            var invites = await _connection.QueryAsync<InviteDBModel>(@"SELECT * FROM `Invites`;");
+            foreach (var invite in invites)
+            {
+                Managers.Invites.Add(invite.Key, invite.Pack, false);
+            }
+
+            Managers.Delegates.OnCoreLoaded();
+            Managers.Delegates.OnCorePostLoaded();
+        });
     }
 
     public void AddInvite(string id, string packId)
     {
-        _connection.Execute(
-                @"INSERT INTO `Invites` (`Key`, `Pack`) VALUES ('@Key', '@Pack');",
-                new { Key = id, Pack = packId }
+        Task.Run(async () =>
+        {
+            await _connection.ExecuteAsync(
+                $@"INSERT INTO `Invites` (`Key`, `Pack`) VALUES ('{id}', '{packId}');"
             );
+        });
     }
 
     public void RemoveInvite(string id)
     {
-        _connection.Execute(@"DELETE FROM `Invites` WHERE `Key` = '@Key';", new { Key = id });
-    }
-
-    public void LoadInvites()
-    {
-        var invites = _connection.Query<InviteDBModel>(@"SELECT * FROM `Invites`;");
-        foreach (var invite in invites)
+        Task.Run(async () =>
         {
-            Managers.Invites.Add(invite.Key, invite.Pack, false);
-        }
+            await _connection.ExecuteAsync($@"DELETE FROM `Invites` WHERE `Key` = '{id}';");
+        });
     }
 }
 
@@ -354,6 +378,11 @@ public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
 
         Capabilities.RegisterPluginCapability(_apiCapability, () => new API());
         API = _apiCapability.Get();
+    }
+
+    public override void OnAllPluginsLoaded(bool hotReload)
+    {
+        base.OnAllPluginsLoaded(hotReload);
 
         Managers.Database.Load(ModuleDirectory);
     }
@@ -363,13 +392,6 @@ public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
         Config = config;
 
         Managers.Packs.SetConfig(config);
-    }
-
-    public override void OnAllPluginsLoaded(bool hotReload)
-    {
-        base.OnAllPluginsLoaded(hotReload);
-
-        Managers.Database.LoadInvites();
     }
 
     [ConsoleCommand("css_invite_generate", "")]

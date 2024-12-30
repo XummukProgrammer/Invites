@@ -34,6 +34,20 @@ public class RewardDelegate : IRewardDelegate
     }
 }
 
+public class CommandRewardAPIDelegate : APIDelegate
+{
+    public CommandRewardAPIDelegate(BasePlugin basePlugin) : base(basePlugin)
+    {
+    }
+
+    public override void OnCoreLoaded()
+    {
+        base.OnCoreLoaded();
+
+        CommandReward.API?.AddReward(Constants.RewardId, new RewardDelegate());
+    }
+}
+
 public class CommandReward : BasePlugin
 {
     public override string ModuleName => Constants.PluginName;
@@ -41,6 +55,7 @@ public class CommandReward : BasePlugin
     public override string ModuleAuthor => Constants.PluginAuthor;
 
     private PluginCapability<IAPI> _apiCapability = new(Invites.API.Constants.APICapability);
+    private CommandRewardAPIDelegate? _apiDelegate;
 
     public static IAPI? API { get; private set; }
 
@@ -49,6 +64,19 @@ public class CommandReward : BasePlugin
         base.OnAllPluginsLoaded(hotReload);
 
         API = _apiCapability.Get();
-        API?.AddReward(Constants.RewardId, new RewardDelegate());
+
+        _apiDelegate = new(this);
+        API?.AddAPIDelegate(_apiDelegate);
+    }
+
+    public override void Unload(bool hotReload)
+    {
+        base.Unload(hotReload);
+
+        if (_apiDelegate != null)
+        {
+            API?.RemoveAPIDelegate(_apiDelegate);
+            _apiDelegate = null;
+        }
     }
 }
