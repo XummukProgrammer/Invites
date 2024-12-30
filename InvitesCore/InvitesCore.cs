@@ -1,6 +1,7 @@
 ﻿using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Core.Capabilities;
+using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using Dapper;
 using Invites.API;
@@ -396,7 +397,7 @@ public class InvitesCore : BasePlugin, IPluginConfig<ConfigModel>
 
     [ConsoleCommand("css_invite_generate", "")]
     [CommandHelper(minArgs: 1, usage: "[packid]", whoCanExecute: CommandUsage.CLIENT_AND_SERVER)]
-    //[RequiresPermissions("@css/root")]
+    [RequiresPermissions("@css/root")]
     public void OnInviteGenerateCommandHandler(CCSPlayerController? controller, CommandInfo command)
     {
         var packId = command.ArgByIndex(1);
